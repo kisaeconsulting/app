@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>내부 예약 시스템</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f8fafc;
+      color: #0f172a;
+    }
+    .wrap {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    h1 { margin: 0 0 8px; font-size: 30px; }
+    p { color: #64748b; }
+    input, select, button {
+      font-size: 16px;
+      border-radius: 12px;
+      border: 1px solid #d1d5db;
+      padding: 12px;
+    }
+    button {
+      cursor: pointer;
+      border: none;
+      background: #111827;
+      color: white;
+      font-weight: 700;
+    }
+    button.secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+    button.danger {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 16px;
+    }
+    .form {
+      display: grid;
+      gap: 10px;
+    }
+    .slot {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      background: #fff;
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+    .available { background: #dcfce7; color: #166534; }
+    .booked { background: #e5e7eb; color: #475569; }
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: end;
+      margin-bottom: 18px;
+    }
+    .stats {
+      display: flex;
+      gap: 12px;
+      text-align: center;
+    }
+    .stat strong { font-size: 24px; display: block; }
+    .login {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .login .card {
+      max-width: 420px;
+      width: 100%;
+    }
+    .hidden { display: none; }
+    @media (max-width: 760px) {
+      .grid { grid-template-columns: 1fr; }
+      .top { flex-direction: column; align-items: stretch; }
+      .slot { flex-direction: column; align-items: stretch; }
+      .actions button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div id="login" class="login">
+    <div class="card">
+      <h1>내부 예약 시스템</h1>
+      <p>직원 전용입니다. 테스트 비밀번호는 <b>1234</b>입니다.</p>
+      <div class="form">
+        <input id="password" type="password" placeholder="비밀번호 입력" />
+        <button onclick="login()">입장하기</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="app" class="wrap hidden">
+    <div class="top">
+      <div>
+        <p>2026.07.11 ~ 2026.09.08 · 내부 직원용</p>
+        <h1>예약 시간 관리</h1>
+        <p>날짜별 가능 시간과 선생님을 등록하고, 예약 완료 시 해당 시간이 닫힙니다.</p>
+      </div>
+      <div class="card stats">
+        <div class="stat"><strong id="total">0</strong><span>전체</span></div>
+        <div class="stat"><strong id="available">0</strong><span>가능</span></div>
+        <div class="stat"><strong id="booked">0</strong><span>완료</span></div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="form" style="margin-bottom:16px;">
+          <label>날짜 선택</label>
+          <input id="filterDate" type="date" min="2026-07-11" max="2026-09-08" value="2026-07-11" onchange="render()" />
+          <label>선생님 필터</label>
+          <select id="teacherFilter" onchange="render()">
+            <option>전체</option>
+          </select>
+        </div>
+        <div id="slotList"></div>
+      </div>
+
+      <div class="card">
+        <h2>가능 시간 등록</h2>
+        <div class="form">
+          <label>날짜</label>
+          <input id="newDate" type="date" min="2026-07-11" max="2026-09-08" value="2026-07-11" />
+          <label>시간</label>
+          <input id="newTime" type="time" value="09:00" />
+          <label>선생님명</label>
+          <input id="newTeacher" placeholder="예: 김하나" />
+          <button onclick="addSlot()">등록하기</button>
+        </div>
+        <p style="font-size:14px;">현재 버전은 각 브라우저에 저장됩니다. 여러 직원이 동시에 공유하려면 다음 단계에서 Supabase를 연결하면 됩니다.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const START_DATE = "2026-07-11";
+    const END_DATE = "2026-09-08";
+    const STORAGE_KEY = "internal-reservation-slots-v1";
+
+    let slots = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null") || [
+      { id: 1, date: "2026-07-11", time: "10:00", teacher: "김하나", booked: false },
+      { id: 2, date: "2026-07-11", time: "11:00", teacher: "김하나", booked: true },
+      { id: 3, date: "2026-07-12", time: "14:00", teacher: "박민준", booked: false }
+    ];
+
+    function save() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(slots));
+    }
+
+    function login() {
+      const pw = document.getElementById("password").value;
+      if (pw === "1234") {
+        document.getElementById("login").classList.add("hidden");
+        document.getElementById("app").classList.remove("hidden");
+        render();
+      } else {
+        alert("비밀번호가 틀렸습니다.");
+      }
+    }
+
+    document.getElementById("password").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") login();
+    });
+
+    function updateTeacherFilter() {
+      const select = document.getElementById("teacherFilter");
+      const current = select.value || "전체";
+      const teachers = ["전체", ...Array.from(new Set(slots.map(s => s.teacher)))];
+      select.innerHTML = teachers.map(t => `<option>${t}</option>`).join("");
+      select.value = teachers.includes(current) ? current : "전체";
+    }
+
+    function render() {
+      updateTeacherFilter();
+
+      const date = document.getElementById("filterDate").value;
+      const teacher = document.getElementById("teacherFilter").value;
+
+      const filtered = slots
+        .filter(s => s.date === date)
+        .filter(s => teacher === "전체" || s.teacher === teacher)
+        .sort((a, b) => a.time.localeCompare(b.time));
+
+      const daySlots = slots.filter(s => s.date === date);
+      document.getElementById("total").innerText = daySlots.length;
+      document.getElementById("available").innerText = daySlots.filter(s => !s.booked).length;
+      document.getElementById("booked").innerText = daySlots.filter(s => s.booked).length;
+
+      const list = document.getElementById("slotList");
+      if (filtered.length === 0) {
+        list.innerHTML = `<p>등록된 가능 시간이 없습니다.</p>`;
+        return;
+      }
+
+      list.innerHTML = filtered.map(s => `
+        <div class="slot">
+          <div>
+            <div><b>${s.date}</b></div>
+            <div>${s.time}</div>
+            <div>${s.teacher}</div>
+            <span class="badge ${s.booked ? "booked" : "available"}">
+              ${s.booked ? "예약 완료" : "예약 가능"}
+            </span>
+          </div>
+          <div class="actions">
+            <button class="${s.booked ? "secondary" : ""}" onclick="toggleSlot(${s.id})">
+              ${s.booked ? "다시 열기" : "예약 완료"}
+            </button>
+            <button class="danger" onclick="deleteSlot(${s.id})">삭제</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function addSlot() {
+      const date = document.getElementById("newDate").value;
+      const time = document.getElementById("newTime").value;
+      const teacher = document.getElementById("newTeacher").value.trim();
+
+      if (!date || !time || !teacher) {
+        alert("날짜, 시간, 선생님명을 모두 입력해주세요.");
+        return;
+      }
+
+      if (date < START_DATE || date > END_DATE) {
+        alert("등록 가능 기간은 2026.07.11 ~ 2026.09.08입니다.");
+        return;
+      }
+
+      const exists = slots.some(s => s.date === date && s.time === time && s.teacher === teacher);
+      if (exists) {
+        alert("이미 등록된 시간입니다.");
+        return;
+      }
+
+      slots.push({ id: Date.now(), date, time, teacher, booked: false });
+      save();
+
+      document.getElementById("filterDate").value = date;
+      document.getElementById("newTeacher").value = "";
+      render();
+    }
+
+    function toggleSlot(id) {
+      slots = slots.map(s => s.id === id ? { ...s, booked: !s.booked } : s);
+      save();
+      render();
+    }
+
+    function deleteSlot(id) {
+      if (!confirm("삭제할까요?")) return;
+      slots = slots.filter(s => s.id !== id);
+      save();
+      render();
+    }
+  </script>
+</body>
+</html>
