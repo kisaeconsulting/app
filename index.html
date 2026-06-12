@@ -5,291 +5,47 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>내부 예약 시스템</title>
   <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f8fafc;
-      color: #0f172a;
-    }
-    .wrap {
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 24px;
-    }
-    .card {
-      background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 18px;
-      padding: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    }
-    h1 { margin: 0 0 8px; font-size: 30px; }
-    p { color: #64748b; }
-    input, select, button {
-      font-size: 16px;
-      border-radius: 12px;
-      border: 1px solid #d1d5db;
-      padding: 12px;
-    }
-    button {
-      cursor: pointer;
-      border: none;
-      background: #111827;
-      color: white;
-      font-weight: 700;
-    }
-    button.secondary {
-      background: #e5e7eb;
-      color: #111827;
-    }
-    button.danger {
-      background: #fee2e2;
-      color: #991b1b;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 340px;
-      gap: 16px;
-    }
-    .form {
-      display: grid;
-      gap: 10px;
-    }
-    .slot {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: center;
-      border: 1px solid #e5e7eb;
-      border-radius: 16px;
-      padding: 16px;
-      margin-bottom: 12px;
-      background: #fff;
-    }
-    .badge {
-      display: inline-block;
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 13px;
-      margin-top: 6px;
-    }
-    .available { background: #dcfce7; color: #166534; }
-    .booked { background: #e5e7eb; color: #475569; }
-    .actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .top {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      align-items: end;
-      margin-bottom: 18px;
-    }
-    .stats {
-      display: flex;
-      gap: 12px;
-      text-align: center;
-    }
-    .stat strong { font-size: 24px; display: block; }
-    .login {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-    }
-    .login .card {
-      max-width: 420px;
-      width: 100%;
-    }
-    .hidden { display: none; }
-    @media (max-width: 760px) {
-      .grid { grid-template-columns: 1fr; }
-      .top { flex-direction: column; align-items: stretch; }
-      .slot { flex-direction: column; align-items: stretch; }
-      .actions button { width: 100%; }
-    }
+    *{box-sizing:border-box} body{margin:0;font-family:Arial,sans-serif;background:#f8fafc;color:#0f172a}.wrap{max-width:1180px;margin:0 auto;padding:24px}.card{background:white;border:1px solid #e5e7eb;border-radius:18px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.04)}h1{margin:0 0 8px;font-size:30px}h2{margin:0 0 14px;font-size:20px}p{color:#64748b}input,select,button{font-size:15px;border-radius:12px;border:1px solid #d1d5db;padding:11px}button{cursor:pointer;border:none;background:#111827;color:white;font-weight:700}button.secondary{background:#e5e7eb;color:#111827}button.danger{background:#fee2e2;color:#991b1b}.top{display:flex;justify-content:space-between;gap:16px;align-items:end;margin-bottom:18px}.grid{display:grid;grid-template-columns:1fr 380px;gap:16px;align-items:start}.form{display:grid;gap:10px}.calendar-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px}.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}.dow{font-weight:700;color:#64748b;text-align:center;padding:8px}.day{min-height:96px;border:1px solid #e5e7eb;background:#fff;border-radius:14px;padding:10px;cursor:pointer}.day.out{opacity:.35;background:#f8fafc}.day.selected{outline:3px solid #111827}.date-num{font-weight:800;margin-bottom:8px}.pill{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;margin:2px 2px 0 0}.ok{background:#dcfce7;color:#166534}.done{background:#e5e7eb;color:#475569}
+    .entry{display:block;font-size:11.5px;line-height:1.25;padding:3px 6px;border-radius:8px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+    .entry.booked{background:#f1f5f9 !important;color:#94a3b8 !important;text-decoration:line-through;font-weight:500}
+    .more{display:block;font-size:11px;color:#64748b;margin-top:3px;font-weight:700}
+    .legend{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;font-size:12.5px;align-items:center}
+    .legend .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-weight:600}
+    .legend .hint{color:#94a3b8;font-size:12px}.slot{display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid #e5e7eb;border-radius:16px;padding:14px;margin-bottom:10px;background:#fff}.actions{display:flex;gap:8px;flex-wrap:wrap}.login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}.login .card{max-width:420px;width:100%}.hidden{display:none}.notice{font-size:13px;background:#f1f5f9;border-radius:14px;padding:12px;color:#475569}.status{font-size:13px;margin-top:10px;color:#475569}@media(max-width:900px){.grid{grid-template-columns:1fr}.top{flex-direction:column;align-items:stretch}.calendar{gap:5px}.day{min-height:76px;padding:5px}.slot{flex-direction:column;align-items:stretch}.actions button{width:100%}.entry{font-size:10px;padding:2px 4px}.date-num{font-size:13px;margin-bottom:4px}}
   </style>
 </head>
 <body>
-  <div id="login" class="login">
-    <div class="card">
-      <h1>내부 예약 시스템</h1>
-      <p>직원 전용입니다. 테스트 비밀번호는 <b>1234</b>입니다.</p>
-      <div class="form">
-        <input id="password" type="password" placeholder="비밀번호 입력" />
-        <button onclick="login()">입장하기</button>
-      </div>
-    </div>
-  </div>
-
+  <div id="login" class="login"><div class="card"><h1>내부 예약 시스템</h1><p>직원 전용입니다. 테스트 비밀번호는 <b>1234</b>입니다.</p><div class="form"><input id="password" type="password" placeholder="비밀번호 입력"/><button onclick="login()">입장하기</button></div></div></div>
   <div id="app" class="wrap hidden">
-    <div class="top">
-      <div>
-        <p>2026.07.11 ~ 2026.09.08 · 내부 직원용</p>
-        <h1>예약 시간 관리</h1>
-        <p>날짜별 가능 시간과 선생님을 등록하고, 예약 완료 시 해당 시간이 닫힙니다.</p>
-      </div>
-      <div class="card stats">
-        <div class="stat"><strong id="total">0</strong><span>전체</span></div>
-        <div class="stat"><strong id="available">0</strong><span>가능</span></div>
-        <div class="stat"><strong id="booked">0</strong><span>완료</span></div>
-      </div>
-    </div>
-
-    <div class="grid">
-      <div class="card">
-        <div class="form" style="margin-bottom:16px;">
-          <label>날짜 선택</label>
-          <input id="filterDate" type="date" min="2026-07-11" max="2026-09-08" value="2026-07-11" onchange="render()" />
-          <label>선생님 필터</label>
-          <select id="teacherFilter" onchange="render()">
-            <option>전체</option>
-          </select>
-        </div>
-        <div id="slotList"></div>
-      </div>
-
-      <div class="card">
-        <h2>가능 시간 등록</h2>
-        <div class="form">
-          <label>날짜</label>
-          <input id="newDate" type="date" min="2026-07-11" max="2026-09-08" value="2026-07-11" />
-          <label>시간</label>
-          <input id="newTime" type="time" value="09:00" />
-          <label>선생님명</label>
-          <input id="newTeacher" placeholder="예: 김하나" />
-          <button onclick="addSlot()">등록하기</button>
-        </div>
-        <p style="font-size:14px;">현재 버전은 각 브라우저에 저장됩니다. 여러 직원이 동시에 공유하려면 다음 단계에서 Supabase를 연결하면 됩니다.</p>
-      </div>
-    </div>
+    <div class="top"><div><p>2026.07.01 ~ 2026.09.11 · 내부 직원용</p><h1>예약 달력 관리</h1><p>예약 완료 시 Google Calendar에 자동 등록되도록 구성되어 있습니다.</p></div><div class="card"><b>Google Calendar 자동 연동</b><div class="notice" style="margin-top:8px">이제 모든 일정이 Google Calendar에 직접 저장됩니다.<br/>누가 어디서 열어도 같은 일정이 보이고, 구글 캘린더 앱에서도 확인할 수 있습니다.<br/>환경변수 설정 전에는 임시 모드(이 브라우저에만 저장)로 동작합니다.</div></div></div>
+    <div class="grid"><div class="card"><div class="calendar-head"><button class="secondary" onclick="changeMonth(-1)">이전</button><h2 id="monthTitle"></h2><button class="secondary" onclick="changeMonth(1)">다음</button></div><div class="legend" id="legend"></div><div class="calendar" id="calendar"></div></div>
+    <div class="card"><h2 id="selectedTitle">선택 날짜</h2><div class="form" style="margin-bottom:16px"><label>선생님 필터</label><select id="teacherFilter" onchange="render()"><option>전체</option></select></div><div id="slotList"></div><hr style="border:none;border-top:1px solid #e5e7eb;margin:18px 0"/><h2>가능 시간 등록</h2><div class="form"><label>날짜</label><input id="newDate" type="date" min="2026-07-01" max="2026-09-11" value="2026-07-01"/><label>시간</label><input id="newTime" type="time" value="09:00"/><label>소요 시간</label><select id="duration"><option value="30">30분</option><option value="60" selected>1시간</option><option value="90">1시간 30분</option><option value="120">2시간</option></select><label>선생님명</label><input id="newTeacher" placeholder="예: 김하나"/><button onclick="addSlot()">등록하기</button></div><div id="apiStatus" class="status"></div></div></div>
   </div>
-
-  <script>
-    const START_DATE = "2026-07-11";
-    const END_DATE = "2026-09-08";
-    const STORAGE_KEY = "internal-reservation-slots-v1";
-
-    let slots = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null") || [
-      { id: 1, date: "2026-07-11", time: "10:00", teacher: "김하나", booked: false },
-      { id: 2, date: "2026-07-11", time: "11:00", teacher: "김하나", booked: true },
-      { id: 3, date: "2026-07-12", time: "14:00", teacher: "박민준", booked: false }
-    ];
-
-    function save() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(slots));
-    }
-
-    function login() {
-      const pw = document.getElementById("password").value;
-      if (pw === "1234") {
-        document.getElementById("login").classList.add("hidden");
-        document.getElementById("app").classList.remove("hidden");
-        render();
-      } else {
-        alert("비밀번호가 틀렸습니다.");
-      }
-    }
-
-    document.getElementById("password").addEventListener("keydown", function(e) {
-      if (e.key === "Enter") login();
-    });
-
-    function updateTeacherFilter() {
-      const select = document.getElementById("teacherFilter");
-      const current = select.value || "전체";
-      const teachers = ["전체", ...Array.from(new Set(slots.map(s => s.teacher)))];
-      select.innerHTML = teachers.map(t => `<option>${t}</option>`).join("");
-      select.value = teachers.includes(current) ? current : "전체";
-    }
-
-    function render() {
-      updateTeacherFilter();
-
-      const date = document.getElementById("filterDate").value;
-      const teacher = document.getElementById("teacherFilter").value;
-
-      const filtered = slots
-        .filter(s => s.date === date)
-        .filter(s => teacher === "전체" || s.teacher === teacher)
-        .sort((a, b) => a.time.localeCompare(b.time));
-
-      const daySlots = slots.filter(s => s.date === date);
-      document.getElementById("total").innerText = daySlots.length;
-      document.getElementById("available").innerText = daySlots.filter(s => !s.booked).length;
-      document.getElementById("booked").innerText = daySlots.filter(s => s.booked).length;
-
-      const list = document.getElementById("slotList");
-      if (filtered.length === 0) {
-        list.innerHTML = `<p>등록된 가능 시간이 없습니다.</p>`;
-        return;
-      }
-
-      list.innerHTML = filtered.map(s => `
-        <div class="slot">
-          <div>
-            <div><b>${s.date}</b></div>
-            <div>${s.time}</div>
-            <div>${s.teacher}</div>
-            <span class="badge ${s.booked ? "booked" : "available"}">
-              ${s.booked ? "예약 완료" : "예약 가능"}
-            </span>
-          </div>
-          <div class="actions">
-            <button class="${s.booked ? "secondary" : ""}" onclick="toggleSlot(${s.id})">
-              ${s.booked ? "다시 열기" : "예약 완료"}
-            </button>
-            <button class="danger" onclick="deleteSlot(${s.id})">삭제</button>
-          </div>
-        </div>
-      `).join("");
-    }
-
-    function addSlot() {
-      const date = document.getElementById("newDate").value;
-      const time = document.getElementById("newTime").value;
-      const teacher = document.getElementById("newTeacher").value.trim();
-
-      if (!date || !time || !teacher) {
-        alert("날짜, 시간, 선생님명을 모두 입력해주세요.");
-        return;
-      }
-
-      if (date < START_DATE || date > END_DATE) {
-        alert("등록 가능 기간은 2026.07.11 ~ 2026.09.08입니다.");
-        return;
-      }
-
-      const exists = slots.some(s => s.date === date && s.time === time && s.teacher === teacher);
-      if (exists) {
-        alert("이미 등록된 시간입니다.");
-        return;
-      }
-
-      slots.push({ id: Date.now(), date, time, teacher, booked: false });
-      save();
-
-      document.getElementById("filterDate").value = date;
-      document.getElementById("newTeacher").value = "";
-      render();
-    }
-
-    function toggleSlot(id) {
-      slots = slots.map(s => s.id === id ? { ...s, booked: !s.booked } : s);
-      save();
-      render();
-    }
-
-    function deleteSlot(id) {
-      if (!confirm("삭제할까요?")) return;
-      slots = slots.filter(s => s.id !== id);
-      save();
-      render();
-    }
-  </script>
-</body>
-</html>
+<script>
+const START_DATE='2026-07-01', END_DATE='2026-09-11', STORAGE_KEY='internal-reservation-calendar-auto-v1';
+let currentMonth=6,currentYear=2026,selectedDate=START_DATE;
+let slots=[]; let apiMode=true; let busy=false;
+function save(){if(!apiMode)localStorage.setItem(STORAGE_KEY,JSON.stringify(slots))}
+function pad(n){return String(n).padStart(2,'0')}
+function ymd(d){return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
+function isInRange(date){return date>=START_DATE&&date<=END_DATE}
+function formatDate(s){const d=new Date(s+'T00:00:00');return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}`}
+async function api(body){const res=await fetch('/api/calendar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});let data={};try{data=await res.json()}catch(e){}if(!res.ok)throw new Error(data.error||('서버 오류 '+res.status));return data}
+async function loadSlots(){setStatus('Google Calendar에서 일정을 불러오는 중...');try{const data=await api({action:'list',range:{start:START_DATE,end:END_DATE}});slots=(data.slots||[]).map(s=>({id:s.eventId,...s}));apiMode=true;setStatus('Google Calendar 연동 중 · 일정 '+slots.length+'개')}catch(err){apiMode=false;slots=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');setStatus('⚠ 임시 모드(이 브라우저에만 저장됨) — '+err.message)}render()}
+function login(){if(document.getElementById('password').value==='1234'){document.getElementById('login').classList.add('hidden');document.getElementById('app').classList.remove('hidden');render();loadSlots()}else alert('비밀번호가 틀렸습니다.')}
+document.getElementById('password').addEventListener('keydown',e=>{if(e.key==='Enter')login()});
+function changeMonth(delta){currentMonth+=delta;if(currentMonth<0){currentMonth=11;currentYear--}if(currentMonth>11){currentMonth=0;currentYear++}render()}
+function updateTeacherFilter(){const select=document.getElementById('teacherFilter');const current=select.value||'전체';const teachers=['전체',...Array.from(new Set(slots.map(s=>s.teacher))).sort()];select.innerHTML=teachers.map(t=>`<option>${t}</option>`).join('');select.value=teachers.includes(current)?current:'전체'}
+const TEACHER_COLORS=[['#dbeafe','#1e40af'],['#dcfce7','#166534'],['#fef3c7','#92400e'],['#fce7f3','#9d174d'],['#ede9fe','#5b21b6'],['#cffafe','#155e75'],['#fee2e2','#991b1b'],['#ecfccb','#3f6212']];
+function teacherColor(name){const teachers=Array.from(new Set(slots.map(s=>s.teacher))).sort();const idx=teachers.indexOf(name);return TEACHER_COLORS[(idx<0?0:idx)%TEACHER_COLORS.length]}
+function renderLegend(){const el=document.getElementById('legend');const teachers=Array.from(new Set(slots.map(s=>s.teacher))).sort();if(!teachers.length){el.innerHTML='';return}el.innerHTML=teachers.map(t=>{const c=teacherColor(t);return `<span class="chip" style="background:${c[0]};color:${c[1]}">${t}</span>`}).join('')+'<span class="hint">취소선 = 예약 완료</span>'}
+function renderCalendar(){const cal=document.getElementById('calendar');document.getElementById('monthTitle').innerText=`${currentYear}년 ${currentMonth+1}월`;const teacherFilter=document.getElementById('teacherFilter').value||'전체';let html=['일','월','화','수','목','금','토'].map(d=>`<div class="dow">${d}</div>`).join('');const first=new Date(currentYear,currentMonth,1);const start=new Date(currentYear,currentMonth,1-first.getDay());const MAX_SHOW=3;for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const dateStr=ymd(d);const inMonth=d.getMonth()===currentMonth;const inRange=isInRange(dateStr);const daySlots=slots.filter(s=>s.date===dateStr).filter(s=>teacherFilter==='전체'||s.teacher===teacherFilter).sort((a,b)=>a.time.localeCompare(b.time));const shown=daySlots.slice(0,MAX_SHOW);const extra=daySlots.length-shown.length;const entries=shown.map(s=>{const c=teacherColor(s.teacher);return `<span class="entry ${s.booked?'booked':''}" style="background:${c[0]};color:${c[1]}" title="${s.time} ${s.teacher} (${s.booked?'예약 완료':'예약 가능'})${s.memo?' · '+s.memo:''}">${s.time} ${s.teacher}</span>`}).join('')+(extra>0?`<span class="more">+${extra}개 더보기</span>`:'');html+=`<div class="day ${!inMonth||!inRange?'out':''} ${dateStr===selectedDate?'selected':''}" onclick="${inRange?`selectDate('${dateStr}')`:''}"><div class="date-num">${d.getDate()}</div>${entries}</div>`} cal.innerHTML=html}
+function selectDate(s){selectedDate=s;document.getElementById('newDate').value=s;render()}
+function renderSlots(){document.getElementById('selectedTitle').innerText=`${formatDate(selectedDate)} 예약`;const teacher=document.getElementById('teacherFilter').value;const filtered=slots.filter(s=>s.date===selectedDate).filter(s=>teacher==='전체'||s.teacher===teacher).sort((a,b)=>a.time.localeCompare(b.time));const list=document.getElementById('slotList');if(!filtered.length){list.innerHTML='<p>등록된 시간이 없습니다.</p>';return}list.innerHTML=filtered.map(s=>`<div class="slot"><div><b>${s.time}</b> · ${s.duration||60}분<br/>${s.teacher}<br/><span class="pill ${s.booked?'done':'ok'}">${s.booked?'예약 완료':'예약 가능'}</span>${s.memo?`<div style="font-size:12.5px;color:#64748b;margin-top:6px">📝 ${s.memo}</div>`:''}</div><div class="actions">${s.booked?`<button class="secondary" onclick="reopenSlot('${s.id}')">다시 열기</button>`:`<button onclick="bookSlot('${s.id}')">예약 완료</button>`}<button class="danger" onclick="deleteSlot('${s.id}')">삭제</button></div></div>`).join('')}
+function render(){updateTeacherFilter();renderLegend();renderCalendar();renderSlots()}
+async function addSlot(){if(busy)return;const date=document.getElementById('newDate').value,time=document.getElementById('newTime').value,duration=Number(document.getElementById('duration').value),teacher=document.getElementById('newTeacher').value.trim();if(!date||!time||!teacher)return alert('날짜, 시간, 선생님명을 입력해주세요.');if(!isInRange(date))return alert('등록 가능 기간은 2026.07.01 ~ 2026.09.11입니다.');if(slots.some(s=>s.date===date&&s.time===time&&s.teacher===teacher))return alert('이미 등록된 시간입니다.');const slot={date,time,duration,teacher};if(apiMode){busy=true;setStatus('Google Calendar에 등록 중...');try{const data=await api({action:'create',slot});slots.push({id:data.eventId,eventId:data.eventId,...slot,booked:false});setStatus('등록 완료')}catch(err){setStatus('등록 실패: '+err.message);busy=false;return}busy=false}else{slots.push({id:String(Date.now()),...slot,booked:false});save()}selectedDate=date;currentYear=Number(date.slice(0,4));currentMonth=Number(date.slice(5,7))-1;document.getElementById('newTeacher').value='';render()}
+async function bookSlot(id){if(busy)return;const slot=slots.find(s=>s.id===id);if(!slot)return;const memo=prompt('예약 메모 (예: 이름, 연락처, 대면/비대면 — 없으면 비워두세요)','');if(memo===null)return;if(apiMode){busy=true;setStatus('예약 완료 처리 중...');try{await api({action:'book',eventId:id,slot:{teacher:slot.teacher,duration:slot.duration,date:slot.date,time:slot.time,memo:memo.trim()}});slot.booked=true;slot.memo=memo.trim();setStatus('예약 완료 — Google Calendar에 반영됨')}catch(err){setStatus('처리 실패: '+err.message)}busy=false}else{slot.booked=true;slot.memo=memo.trim();save();setStatus('예약 완료(임시 모드)')}render()}
+async function reopenSlot(id){if(busy)return;const slot=slots.find(s=>s.id===id);if(!slot)return;if(apiMode){busy=true;setStatus('다시 열기 처리 중...');try{await api({action:'reopen',eventId:id,slot:{teacher:slot.teacher,duration:slot.duration,date:slot.date,time:slot.time}});slot.booked=false;slot.memo='';setStatus('다시 열기 완료 — Google Calendar에 반영됨')}catch(err){setStatus('처리 실패: '+err.message)}busy=false}else{slot.booked=false;slot.memo='';save();setStatus('다시 열기 완료(임시 모드)')}render()}
+async function deleteSlot(id){if(busy)return;if(!confirm('삭제할까요? Google Calendar에서도 삭제됩니다.'))return;if(apiMode){busy=true;setStatus('삭제 중...');try{await api({action:'delete',eventId:id});slots=slots.filter(s=>s.id!==id);setStatus('삭제 완료')}catch(err){setStatus('삭제 실패: '+err.message)}busy=false}else{slots=slots.filter(s=>s.id!==id);save()}render()}
+function setStatus(msg){document.getElementById('apiStatus').innerText=msg}
+</script></body></html>
