@@ -20,7 +20,7 @@ function toTimes(date, time, duration){
   return { start: start.toISOString(), end: end.toISOString() };
 }
 
-function summaryFor(teacher, booked){ return `${booked ? '예약 완료' : '예약 가능'} - ${teacher}`; }
+function summaryFor(teacher, booked){ return booked ? `[예약완료] ${teacher}` : `예약 가능 - ${teacher}`; }
 
 function props(teacher, duration, booked, memo){
   const p = { app: APP_TAG, teacher: String(teacher), duration: String(duration || 60), status: booked ? 'booked' : 'available' };
@@ -74,8 +74,8 @@ module.exports = async function handler(req, res){
             date: start.slice(0, 10),
             time: start.slice(11, 16),
             duration,
-            teacher: p.teacher || String(ev.summary || '').replace(/^예약 (가능|완료) - /, ''),
-            booked: p.status === 'booked',
+            teacher: p.teacher || String(ev.summary || '').replace(/^(\[예약완료\]\s*|예약 (가능|완료) - )/, ''),
+            booked: p.status === 'booked' || /\[예약\s*완료\]/.test(String(ev.summary || '')),
             memo: p.memo || ''
           };
         });
@@ -108,6 +108,7 @@ module.exports = async function handler(req, res){
         requestBody: {
           summary: summaryFor(slot.teacher, booked),
           description: descFor(slot.teacher, slot.date || '', slot.time || '', booked, memo),
+          colorId: booked ? '11' : null,
           extendedProperties: props(slot.teacher, slot.duration, booked, memo)
         }
       });
@@ -130,6 +131,7 @@ module.exports = async function handler(req, res){
             description: descFor(s.teacher, s.date, s.time, booked, s.memo) + '\n(엑셀 일정표에서 일괄 등록됨)',
             start: { dateTime: t.start, timeZone: 'Asia/Seoul' },
             end: { dateTime: t.end, timeZone: 'Asia/Seoul' },
+            ...(booked ? { colorId: '11' } : {}),
             extendedProperties: props(s.teacher, s.duration, booked, s.memo)
           }
         });
