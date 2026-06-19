@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>캘린더 일정 이사</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f8fafc;color:#0f172a;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.card{background:white;border:1px solid #e5e7eb;border-radius:18px;padding:28px;box-shadow:0 2px 8px rgba(0,0,0,.04);max-width:560px;width:100%}
+h1{margin:0 0 10px;font-size:24px}p{color:#64748b;line-height:1.6}
+label{font-weight:700;font-size:14px;display:block;margin-bottom:6px}
+input{font-size:15px;border-radius:12px;border:1px solid #d1d5db;padding:12px;width:100%}
+button{font-size:16px;border-radius:12px;border:none;padding:14px;background:#111827;color:white;font-weight:700;cursor:pointer;width:100%;margin-top:14px}
+button:disabled{background:#cbd5e1;cursor:default}
+.bar{height:12px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin-top:18px}
+.bar>div{height:100%;width:0%;background:#16a34a;transition:width .3s}
+.status{font-size:14px;margin-top:10px;color:#475569;white-space:pre-line}
+.notice{font-size:13px;background:#f1f5f9;border-radius:14px;padding:12px;color:#475569;margin-top:14px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>캘린더 일정 이사</h1>
+<p>이전 캘린더에 있는 예약 일정 전부(예약 완료 상태, 메모 포함)를 현재 연결된 새 캘린더로 복사합니다.</p>
+<label>이전 캘린더 ID</label>
+<input id="srcId" placeholder="예: xxxxxx@group.calendar.google.com"/>
+<button id="btn" onclick="run()">일정 복사 시작</button>
+<div class="bar"><div id="fill"></div></div>
+<div class="status" id="status">대기 중</div>
+<div class="notice">이전 캘린더 ID는 (이전 캘린더의) 설정 → 캘린더 통합 → 캘린더 ID에서 확인할 수 있어요.<br/>
+이미 새 캘린더에 있는 일정(같은 날짜·시간·선생님)은 건너뛰므로, 중간에 끊겨도 다시 실행하면 이어서 복사됩니다.<br/>
+이전 캘린더의 일정은 그대로 남아 있으니(복사 방식) 확인 후 필요 없으면 이전 캘린더를 삭제하면 됩니다.<br/>
+복사 완료 후 이 파일(migrate.html)은 GitHub에서 삭제해도 됩니다.</div>
+</div>
+<script>
+const RANGE = { start: '2026-07-01', end: '2026-09-11' };
+const BATCH = 15;
+function setStatus(m){document.getElementById('status').innerText=m}
+function setBar(p){document.getElementById('fill').style.width=p+'%'}
+async function api(body){const r=await fetch('/api/calendar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});let d={};try{d=await r.json()}catch(e){}if(!r.ok)throw new Error(d.error||('서버 오류 '+r.status));return d}
+async function run(){
+  const src=document.getElementById('srcId').value.trim();
+  if(!src) return alert('이전 캘린더 ID를 입력해주세요.');
+  if(src.indexOf('http')===0) return alert('주소(URL)가 아니라 캘린더 ID를 넣어주세요. 보통 @group.calendar.google.com으로 끝나요.');
+  const btn=document.getElementById('btn');btn.disabled=true;
+  try{
+    setStatus('이전 캘린더에서 일정 읽는 중...');
+    const srcData=await api({action:'listFrom',sourceCalendarId:src,range:RANGE});
+    const srcSlots=srcData.slots||[];
+    if(!srcSlots.length){setStatus('이전 캘린더에서 일정을 찾지 못했어요.\n캘린더 ID가 맞는지, 서비스 계정이 그 캘린더에 공유되어 있는지 확인해주세요.');btn.disabled=false;return}
+    setStatus('새 캘린더의 기존 일정 확인 중...');
+    const dstData=await api({action:'list',range:RANGE});
+    const existing=new Set((dstData.slots||[]).map(s=>s.date+'|'+s.time+'|'+s.teacher));
+    const todo=srcSlots.filter(s=>!existing.has(s.date+'|'+s.time+'|'+s.teacher));
+    const skipped=srcSlots.length-todo.length;
+    if(!todo.length){setStatus('모든 일정('+srcSlots.length+'개)이 이미 새 캘린더에 있습니다.');setBar(100);return}
+    let done=0;
+    for(let i=0;i<todo.length;i+=BATCH){
+      const batch=todo.slice(i,i+BATCH);
+      setStatus('복사 중... '+done+' / '+todo.length+(skipped?' (이미 있어서 건너뜀 '+skipped+'개)':''));
+      const r=await api({action:'bulkCreate',slots:batch});
+      done+=r.created||batch.length;
+      setBar(Math.round(done/todo.length*100));
+    }
+    setBar(100);
+    setStatus('완료! '+done+'개 복사'+(skipped?', '+skipped+'개는 이미 있어서 건너뜀':'')+'\n이제 메인 화면에서 확인해보세요.');
+  }catch(err){
+    setStatus('오류: '+err.message+'\n다시 실행하면 복사 안 된 것만 이어서 복사됩니다.');
+    btn.disabled=false;
+  }
+}
+</script>
+</body></html>
